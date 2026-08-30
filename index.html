@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LifeOS – Oh Shit Meal Builder v3</title>
+  <title>LifeOS – Oh Shit Meal Builder v4</title>
   <style>
     :root{
       --bg:#f4f2ea; --card:#fffdf8; --ink:#173228; --muted:#6d786f;
@@ -80,7 +80,7 @@
       <div class="logo">🌿</div>
       <div>
         <h1>Oh Shit Meal Builder</h1>
-        <div class="subtitle">Välj protein, kolhydrat, fett och upp till tre grönsaker. Systemet räknar hela måltiden tillsammans och prioriterar protein, kalorier och rimliga portionsstorlekar.</div>
+        <div class="subtitle">Välj protein, kolhydrat, fett och upp till tre grönsaker. Protein och kolhydrat kan också sättas till “Ingen”. Systemet räknar hela måltiden tillsammans och prioriterar protein, kalorier och rimliga portionsstorlekar.</div>
       </div>
     </div>
     <div class="target">
@@ -101,7 +101,7 @@
         <div>
           <label for="protein">Proteinkälla</label>
           <select id="protein"></select>
-          <div class="hint">Protein prioriteras högst. Fetare proteinkällor, som tonfisk i olja, kan göra att extra fettkälla sätts till 0 g.</div>
+          <div class="hint">Välj “Ingen” om du inte vill ha en separat proteinkälla. Protein från övriga val räknas fortfarande med. Fetare proteinkällor, som tonfisk i olja, kan göra att extra fettkälla sätts till 0 g.</div>
         </div>
       </div>
 
@@ -110,7 +110,7 @@
         <div>
           <label for="carb">Kolhydratkälla</label>
           <select id="carb"></select>
-          <div class="hint">Mängden justeras tillsammans med protein och fett. Rå/okokt eller avrunnen vikt framgår i namnet.</div>
+          <div class="hint">Välj “Ingen” om du inte vill ha en separat kolhydratkälla. Kolhydrater från övriga val räknas fortfarande med. Rå/okokt eller avrunnen vikt framgår i namnet.</div>
         </div>
       </div>
 
@@ -199,16 +199,17 @@
 <script>
 const foods = {
   protein: [
+    {name:"Ingen", p:0, f:0, c:0, kcal:0, min:0, max:0, ideal:[0,0]},
     {name:"Kycklingbröst", p:23, f:3, c:0, kcal:120, min:70, max:350, ideal:[120,220]},
     {name:"Kycklingfärs", p:19, f:7, c:0.5, kcal:140, min:70, max:350, ideal:[120,220]},
     {name:"Nötfärs 5 %", p:21, f:5, c:0, kcal:130, min:70, max:350, ideal:[120,220]},
     {name:"Nötkött, magert", p:22, f:6, c:0, kcal:145, min:70, max:350, ideal:[120,220]},
     {name:"Torsk / vitfisk", p:18.5, f:0.8, c:0, kcal:82, min:80, max:400, ideal:[140,250]},
-    {name:"Lax, rå innen kokning", p:20, f:13, c:0, kcal:206, min:60, max:300, ideal:[140,250]},
     {name:"Räkor", p:20, f:1.2, c:0.5, kcal:96, min:80, max:400, ideal:[140,250]},
     {name:"Tonfisk i olja, avrunnen", p:25, f:9.9, c:0, kcal:189, min:60, max:300, ideal:[100,180]}
   ],
   carb: [
+    {name:"Ingen", p:0, f:0, c:0, kcal:0, min:0, max:0, ideal:[0,0]},
     {name:"Råris, okokt", p:8, f:2.5, c:72, kcal:349, min:0, max:120, ideal:[35,80]},
     {name:"Potatis, rå", p:2, f:0.1, c:17, kcal:77, min:0, max:500, ideal:[150,350]},
     {name:"Sötpotatis, rå", p:1.6, f:0.1, c:20.1, kcal:86, min:0, max:450, ideal:[130,300]},
@@ -261,6 +262,8 @@ fill("veg2", foods.veg);
 fill("veg3", foods.veg);
 
 // Helpful defaults
+$("protein").value = 1;
+$("carb").value = 1;
 $("veg1").value = foods.veg.findIndex(x=>x.name==="Gurka");
 $("veg2").value = foods.veg.findIndex(x=>x.name.startsWith("Edamame"));
 $("veg3").value = 0;
@@ -412,9 +415,16 @@ function calculate(){
     ...vegItems
   ].filter(x=>x.g>.01);
 
-  const titleParts=[pf.name,cf.name];
+  const titleParts=[];
+  if(pf.name!=="Ingen" && best.pg>.01) titleParts.push(pf.name);
+  if(cf.name!=="Ingen" && best.cg>.01) titleParts.push(cf.name);
   if(best.fg>.01) titleParts.push(ff.name);
-  $("mealTitle").textContent=titleParts.join(" + ");
+
+  // If no main ingredient is used, use the selected vegetables as the meal title.
+  if(titleParts.length===0){
+    vegItems.forEach(x=>titleParts.push(x.name));
+  }
+  $("mealTitle").textContent=titleParts.length ? titleParts.join(" + ") : "Ingen ingrediens vald";
   $("ingredientList").innerHTML=items.map(x=>`
     <div class="ingredient-row"><span>${x.name}</span><strong>${x.g < 10 ? x.g.toFixed(1) : Math.round(x.g)} g</strong></div>
   `).join("");
@@ -464,8 +474,8 @@ function calculate(){
 ].forEach(id=>$(id).addEventListener("input",calculate));
 
 $("resetBtn").onclick=()=>{
-  $("protein").value=0;
-  $("carb").value=0;
+  $("protein").value=1;
+  $("carb").value=1;
   $("fat").value=0;
   $("veg1").value=foods.veg.findIndex(x=>x.name==="Gurka");
   $("veg1g").value=150;
