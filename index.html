@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LifeOS – Oh Shit Meal Builder v3</title>
+  <style>
+    :root{
+      --bg:#f4f2ea; --card:#fffdf8; --ink:#173228; --muted:#6d786f;
+      --green:#0f4b36; --green2:#1e6a4c; --line:#dfe4dc;
+      --soft:#edf3ee; --good:#e6f2e9; --warn:#fff1dd; --bad:#fde9e6;
+      --shadow:0 18px 48px rgba(34,55,43,.10); --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%,rgba(31,106,77,.10),transparent 32%),
+        linear-gradient(#faf9f5,var(--bg));
+    }
+    .shell{max-width:1360px;margin:auto;padding:28px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:24px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:50px;height:50px;border-radius:16px;background:var(--green);color:white;display:grid;place-items:center;font-size:25px}
+    h1{margin:0;font-size:clamp(30px,4vw,50px);letter-spacing:-.04em;line-height:1}
+    .subtitle{color:var(--muted);margin-top:8px;max-width:720px}
+    .target{background:var(--green);color:white;border-radius:999px;padding:14px 18px;display:flex;gap:16px;flex-wrap:wrap}
+    .target strong{font-size:20px}
+    .layout{display:grid;grid-template-columns:1.08fr .92fr;gap:22px}
+    .card{background:rgba(255,253,248,.96);border:1px solid rgba(23,50,40,.08);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+    .card h2{margin:0 0 6px;font-size:22px}
+    .card p{color:var(--muted);margin:0 0 18px}
+    .step{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:18px 0;border-top:1px solid var(--line)}
+    .step:first-of-type{border-top:0}
+    .badge{width:38px;height:38px;border-radius:50%;background:var(--green);color:white;display:grid;place-items:center;font-weight:800}
+    label{display:block;font-weight:750;margin-bottom:8px}
+    select,input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:white;font-size:16px;color:var(--ink)}
+    .hint{font-size:13px;color:var(--muted);margin-top:7px;line-height:1.45}
+    .targetgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .targetbox{background:var(--soft);border-radius:14px;padding:12px;text-align:center}
+    .targetbox input{padding:8px;text-align:center;font-weight:800}
+    .veg-stack{display:grid;gap:10px}
+    .veg-row{display:grid;grid-template-columns:1fr 120px;gap:10px;background:var(--soft);padding:12px;border-radius:14px;align-items:end}
+    .veg-row label{font-size:13px;margin-bottom:6px}
+    .results{position:sticky;top:18px;align-self:start}
+    .hero{background:linear-gradient(145deg,var(--green),#153e31);color:white;border-radius:20px;padding:22px}
+    .hero small{opacity:.75;text-transform:uppercase;letter-spacing:.12em}
+    .meal-title{font-size:28px;font-weight:850;margin:7px 0 14px;line-height:1.1}
+    .ingredient-row{display:flex;justify-content:space-between;gap:15px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;margin-top:9px}
+    .ingredient-row strong{font-size:18px;white-space:nowrap}
+    .macros{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+    .macro{background:white;border:1px solid var(--line);border-radius:15px;padding:13px;text-align:center}
+    .macro strong{display:block;font-size:22px}
+    .macro span{font-size:12px;color:var(--muted)}
+    .delta{font-size:11px;margin-top:4px}
+    .status{border-radius:15px;padding:13px 15px;font-weight:750;line-height:1.4}
+    .good{background:var(--good);color:#245e37}
+    .warn{background:var(--warn);color:#8e581d}
+    .bad{background:var(--bad);color:#963b32}
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+    th,td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:right}
+    th:first-child,td:first-child{text-align:left}
+    .note{margin-top:16px;padding:14px;background:var(--soft);border-radius:15px;color:var(--muted);font-size:13px;line-height:1.5}
+    .buttons{display:flex;gap:10px;margin-top:15px;flex-wrap:wrap}
+    button{border:0;border-radius:13px;padding:12px 16px;font-weight:800;cursor:pointer}
+    .primary{background:var(--green);color:white}
+    .secondary{background:var(--soft);color:var(--green)}
+    .mini{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
+    .pill{display:inline-block;background:rgba(255,255,255,.14);padding:5px 8px;border-radius:999px;font-size:12px;margin-top:6px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.results{position:static}header{align-items:flex-start;flex-direction:column}}
+    @media(max-width:640px){.shell{padding:16px}.macros,.targetgrid{grid-template-columns:1fr 1fr}.veg-row{grid-template-columns:1fr}.target{border-radius:18px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">
+      <div class="logo">🌿</div>
+      <div>
+        <h1>Oh Shit Meal Builder</h1>
+        <div class="subtitle">Välj protein, kolhydrat, fett och upp till tre grönsaker. Systemet räknar hela måltiden tillsammans och prioriterar protein, kalorier och rimliga portionsstorlekar.</div>
+      </div>
+    </div>
+    <div class="target">
+      <span><strong id="headKcal">500</strong> kcal</span>
+      <span><strong id="headProtein">42 g</strong> protein</span>
+      <span><strong id="headFat">18 g</strong> fett</span>
+      <span><strong id="headCarb">42 g</strong> kolhydrater</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="card">
+      <h2>Bygg måltiden</h2>
+      <p>Alla val görs först. Därefter optimeras de tre huvudråvarorna samtidigt medan valda grönsaker räknas fullt ut.</p>
+
+      <div class="step">
+        <div class="badge">1</div>
+        <div>
+          <label for="protein">Proteinkälla</label>
+          <select id="protein"></select>
+          <div class="hint">Protein prioriteras högst. Fetare proteinkällor, som tonfisk i olja, kan göra att extra fettkälla sätts till 0 g.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="badge">2</div>
+        <div>
+          <label for="carb">Kolhydratkälla</label>
+          <select id="carb"></select>
+          <div class="hint">Mängden justeras tillsammans med protein och fett. Rå/okokt eller avrunnen vikt framgår i namnet.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="badge">3</div>
+        <div>
+          <label for="fat">Fettkälla</label>
+          <select id="fat"></select>
+          <div class="hint">Fettkällan är valfri i praktiken: optimeraren får använda 0 g om måltiden redan innehåller tillräckligt fett.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="badge">4</div>
+        <div>
+          <label>Grönsaker – välj upp till 3</label>
+          <div class="veg-stack">
+            <div class="veg-row">
+              <div><label for="veg1">Grönsak 1</label><select id="veg1"></select></div>
+              <div><label for="veg1g">Gram</label><input id="veg1g" type="number" min="0" max="600" step="10" value="150"></div>
+            </div>
+            <div class="veg-row">
+              <div><label for="veg2">Grönsak 2</label><select id="veg2"></select></div>
+              <div><label for="veg2g">Gram</label><input id="veg2g" type="number" min="0" max="600" step="10" value="100"></div>
+            </div>
+            <div class="veg-row">
+              <div><label for="veg3">Grönsak 3</label><select id="veg3"></select></div>
+              <div><label for="veg3g">Gram</label><input id="veg3g" type="number" min="0" max="600" step="10" value="0"></div>
+            </div>
+          </div>
+          <div class="hint">Grönsakerna är fasta val från användaren och räknas fullt ut. Baljväxter som edamame och ärtor påverkar makron betydligt mer än t.ex. gurka och zucchini.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="badge">⚙</div>
+        <div>
+          <label>Måltidsmål</label>
+          <div class="targetgrid">
+            <div class="targetbox"><input id="targetKcal" type="number" value="500"><span>kcal</span></div>
+            <div class="targetbox"><input id="targetProtein" type="number" value="42" step=".1"><span>protein</span></div>
+            <div class="targetbox"><input id="targetFat" type="number" value="18" step=".1"><span>fett</span></div>
+            <div class="targetbox"><input id="targetCarb" type="number" value="42" step=".1"><span>kolhydrater</span></div>
+          </div>
+          <div class="hint">Godkänt intervall: ±25 kcal, ±3 g protein, ±3 g fett och ±5 g kolhydrater. Optimeringen väger protein och kalorier tyngst.</div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card results">
+      <div class="hero">
+        <small>Optimerad måltid</small>
+        <div class="meal-title" id="mealTitle"></div>
+        <div id="ingredientList"></div>
+        <div class="pill" id="portionQuality"></div>
+      </div>
+
+      <div class="macros">
+        <div class="macro">🔥<strong id="kcalOut">0</strong><span>kcal</span><div id="kcalDelta" class="delta"></div></div>
+        <div class="macro">💪<strong id="proteinOut">0 g</strong><span>protein</span><div id="proteinDelta" class="delta"></div></div>
+        <div class="macro">🥑<strong id="fatOut">0 g</strong><span>fett</span><div id="fatDelta" class="delta"></div></div>
+        <div class="macro">🌾<strong id="carbOut">0 g</strong><span>kolhydrater</span><div id="carbDelta" class="delta"></div></div>
+      </div>
+
+      <div id="status" class="status good"></div>
+      <div id="solverInfo" class="mini"></div>
+
+      <h2 style="margin-top:22px">Näringsöversikt</h2>
+      <table>
+        <thead><tr><th>Ingrediens</th><th>g</th><th>P</th><th>F</th><th>K</th><th>kcal</th></tr></thead>
+        <tbody id="breakdown"></tbody>
+      </table>
+
+      <div class="note">
+        <strong>Optimeringslogik:</strong> systemet försöker inte träffa varje mål till varje pris. Protein och kalorier prioriteras högst, fett och kolhydrater får lite mer flexibilitet och orimliga portioner straffas i poängsättningen. Grönsakerna ändras aldrig automatiskt.
+      </div>
+
+      <div class="buttons">
+        <button class="primary" id="copyBtn">Kopiera måltid</button>
+        <button class="secondary" id="resetBtn">Återställ</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const foods = {
+  protein: [
+    {name:"Kycklingbröst", p:23, f:3, c:0, kcal:120, min:70, max:350, ideal:[120,220]},
+    {name:"Kycklingfärs", p:19, f:7, c:0.5, kcal:140, min:70, max:350, ideal:[120,220]},
+    {name:"Nötfärs 5 %", p:21, f:5, c:0, kcal:130, min:70, max:350, ideal:[120,220]},
+    {name:"Nötkött, magert", p:22, f:6, c:0, kcal:145, min:70, max:350, ideal:[120,220]},
+    {name:"Torsk / vitfisk", p:18.5, f:0.8, c:0, kcal:82, min:80, max:400, ideal:[140,250]},
+    {name:"Räkor", p:20, f:1.2, c:0.5, kcal:96, min:80, max:400, ideal:[140,250]},
+    {name:"Tonfisk i olja, avrunnen", p:25, f:9.9, c:0, kcal:189, min:60, max:300, ideal:[100,180]}
+  ],
+  carb: [
+    {name:"Råris, okokt", p:8, f:2.5, c:72, kcal:349, min:0, max:120, ideal:[35,80]},
+    {name:"Potatis, rå", p:2, f:0.1, c:17, kcal:77, min:0, max:500, ideal:[150,350]},
+    {name:"Sötpotatis, rå", p:1.6, f:0.1, c:20.1, kcal:86, min:0, max:450, ideal:[130,300]},
+    {name:"Quinoa, okokt", p:14.1, f:6.1, c:64.2, kcal:368, min:0, max:120, ideal:[35,80]},
+    {name:"Svarta bönor, avrunna", p:7.6, f:0.8, c:13, kcal:103, min:0, max:400, ideal:[100,250]},
+    {name:"Majs, avrunnen", p:3.4, f:1.5, c:18.7, kcal:96, min:0, max:400, ideal:[80,220]}
+  ],
+  fat: [
+    {name:"Olivolja", p:0, f:100, c:0, kcal:884, min:0, max:40, ideal:[5,20]},
+    {name:"Mandlar", p:21.2, f:49.9, c:9.1, kcal:579, min:0, max:80, ideal:[10,30]},
+    {name:"Valnötter", p:15.2, f:65.2, c:7, kcal:654, min:0, max:70, ideal:[10,25]},
+    {name:"Cashewnötter", p:18.2, f:43.8, c:30.2, kcal:553, min:0, max:80, ideal:[10,30]},
+    {name:"Jordnötssmör", p:25, f:50, c:20, kcal:600, min:0, max:70, ideal:[10,30]},
+    {name:"Tahini", p:17, f:53, c:21, kcal:595, min:0, max:70, ideal:[10,30]}
+  ],
+  veg: [
+    {name:"Ingen", p:0, f:0, c:0, kcal:0},
+    {name:"Broccoli", p:2.8, f:0.4, c:6.6, kcal:34},
+    {name:"Blomkål", p:1.9, f:0.3, c:5.0, kcal:25},
+    {name:"Morot", p:0.9, f:0.2, c:9.6, kcal:41},
+    {name:"Paprika", p:1.0, f:0.3, c:6.0, kcal:31},
+    {name:"Gurka", p:0.7, f:0.1, c:2.2, kcal:15},
+    {name:"Zucchini", p:1.2, f:0.3, c:3.1, kcal:17},
+    {name:"Haricots verts", p:1.8, f:0.2, c:7.0, kcal:31},
+    {name:"Vitkål", p:1.3, f:0.1, c:5.8, kcal:25},
+    {name:"Rödkål", p:1.4, f:0.2, c:7.4, kcal:31},
+    {name:"Brysselkål", p:3.4, f:0.3, c:9.0, kcal:43},
+    {name:"Spenat", p:2.9, f:0.4, c:3.6, kcal:23},
+    {name:"Grönkål", p:4.3, f:0.9, c:8.8, kcal:49},
+    {name:"Sparris", p:2.2, f:0.1, c:3.9, kcal:20},
+    {name:"Champinjoner", p:3.1, f:0.3, c:3.3, kcal:22},
+    {name:"Tomat", p:0.9, f:0.2, c:3.9, kcal:18},
+    {name:"Gröna ärtor", p:5.4, f:0.4, c:14.5, kcal:81},
+    {name:"Edamame / gröna sojabönor", p:12, f:5.2, c:8.9, kcal:122}
+  ]
+};
+
+const TOL = { kcal:25, p:3, f:3, c:5 };
+const WEIGHT = { kcal:3, p:4, f:1.5, c:1.5 };
+const $ = id => document.getElementById(id);
+
+function fill(id, arr){
+  $(id).innerHTML = arr.map((x,i)=>`<option value="${i}">${x.name}</option>`).join("");
+}
+fill("protein", foods.protein);
+fill("carb", foods.carb);
+fill("fat", foods.fat);
+fill("veg1", foods.veg);
+fill("veg2", foods.veg);
+fill("veg3", foods.veg);
+
+// Helpful defaults
+$("veg1").value = foods.veg.findIndex(x=>x.name==="Gurka");
+$("veg2").value = foods.veg.findIndex(x=>x.name.startsWith("Edamame"));
+$("veg3").value = 0;
+
+function nutrient(food, grams){
+  const q=grams/100;
+  return {name:food.name, g:grams, p:food.p*q, f:food.f*q, c:food.c*q, kcal:food.kcal*q};
+}
+
+function total(items){
+  return items.reduce((s,x)=>({
+    p:s.p+x.p,
+    f:s.f+x.f,
+    c:s.c+x.c,
+    kcal:s.kcal+x.kcal
+  }),{p:0,f:0,c:0,kcal:0});
+}
+
+function normalizedError(value,target,tolerance){
+  return (value-target)/tolerance;
+}
+
+function portionPenalty(food, grams, type){
+  if(grams <= 0.01) return 0;
+  let penalty = 0;
+  const [low, high] = food.ideal || [food.min || 0, food.max || Infinity];
+
+  if(grams < low) penalty += Math.pow((low-grams)/Math.max(low,1), 2) * 2.0;
+  if(grams > high) penalty += Math.pow((grams-high)/Math.max(high,1), 2) * 2.5;
+
+  // Extra penalties for awkward real-world serving sizes.
+  if(type === "fat" && grams < 4) penalty += 2.5;
+  if(type === "protein" && grams > 280) penalty += (grams-280)/35;
+
+  // Slight preference for kitchen-friendly increments.
+  const step = type === "fat" ? 1 : 5;
+  const rounded = Math.round(grams/step)*step;
+  penalty += Math.abs(grams-rounded) * (type === "fat" ? 0.03 : 0.01);
+
+  return penalty;
+}
+
+function score(t, target, pf, cf, ff, pg, cg, fg){
+  const eK = normalizedError(t.kcal,target.kcal,TOL.kcal);
+  const eP = normalizedError(t.p,target.p,TOL.p);
+  const eF = normalizedError(t.f,target.f,TOL.f);
+  const eC = normalizedError(t.c,target.c,TOL.c);
+
+  let s = WEIGHT.kcal*eK*eK + WEIGHT.p*eP*eP + WEIGHT.f*eF*eF + WEIGHT.c*eC*eC;
+  s += portionPenalty(pf,pg,"protein");
+  s += portionPenalty(cf,cg,"carb");
+  s += portionPenalty(ff,fg,"fat");
+  return s;
+}
+
+function within(t,target){
+  return Math.abs(t.kcal-target.kcal)<=TOL.kcal &&
+         Math.abs(t.p-target.p)<=TOL.p &&
+         Math.abs(t.f-target.f)<=TOL.f &&
+         Math.abs(t.c-target.c)<=TOL.c;
+}
+
+function optimize(pf,cf,ff,vegItems,target){
+  let best=null;
+  let tested=0;
+
+  // Coarse search. Start protein at its practical minimum, while carbs and fat may be zero.
+  const pStart = pf.min ?? 0;
+  for(let pg=pStart; pg<=pf.max; pg+=5){
+    const pi=nutrient(pf,pg);
+    for(let cg=cf.min ?? 0; cg<=cf.max; cg+=5){
+      const ci=nutrient(cf,cg);
+      for(let fg=ff.min ?? 0; fg<=ff.max; fg+=1){
+        const fi=nutrient(ff,fg);
+        const t=total([pi,ci,fi,...vegItems]);
+        const s=score(t,target,pf,cf,ff,pg,cg,fg);
+        tested++;
+        if(!best || s<best.s) best={pg,cg,fg,t,s};
+      }
+    }
+  }
+
+  // Fine search around best coarse result.
+  const start={...best};
+  best=null;
+  for(let pg=Math.max(pf.min ?? 0,start.pg-10); pg<=Math.min(pf.max,start.pg+10); pg+=1){
+    const pi=nutrient(pf,pg);
+    for(let cg=Math.max(cf.min ?? 0,start.cg-10); cg<=Math.min(cf.max,start.cg+10); cg+=1){
+      const ci=nutrient(cf,cg);
+      for(let fg=Math.max(ff.min ?? 0,start.fg-4); fg<=Math.min(ff.max,start.fg+4); fg+=0.25){
+        const fi=nutrient(ff,fg);
+        const t=total([pi,ci,fi,...vegItems]);
+        const s=score(t,target,pf,cf,ff,pg,cg,fg);
+        tested++;
+        if(!best || s<best.s) best={pg,cg,fg,t,s};
+      }
+    }
+  }
+
+  best.tested=tested;
+  return best;
+}
+
+function fmtDelta(value,target,unit=""){
+  const d=value-target;
+  const sign=d>0?"+":"";
+  return `${sign}${d.toFixed(unit===" kcal"?0:1)}${unit}`;
+}
+
+function collectVegItems(){
+  const items=[];
+  for(let i=1;i<=3;i++){
+    const food=foods.veg[+$("veg"+i).value];
+    const grams=Math.max(0,+$("veg"+i+"g").value||0);
+    if(food.name!=="Ingen" && grams>0) items.push(nutrient(food,grams));
+  }
+  return items;
+}
+
+function portionQuality(best,pf,cf,ff){
+  const p = portionPenalty(pf,best.pg,"protein") + portionPenalty(cf,best.cg,"carb") + portionPenalty(ff,best.fg,"fat");
+  if(p < 0.6) return "✓ Praktiska portionsstorlekar";
+  if(p < 2.2) return "• Bra men något ovanliga mängder";
+  return "⚠ Makron kräver mindre naturliga portioner";
+}
+
+function calculate(){
+  const pf=foods.protein[+$("protein").value];
+  const cf=foods.carb[+$("carb").value];
+  const ff=foods.fat[+$("fat").value];
+  const target={
+    kcal:+$("targetKcal").value||500,
+    p:+$("targetProtein").value||42,
+    f:+$("targetFat").value||18,
+    c:+$("targetCarb").value||42
+  };
+
+  $("headKcal").textContent=Math.round(target.kcal);
+  $("headProtein").textContent=target.p+" g";
+  $("headFat").textContent=target.f+" g";
+  $("headCarb").textContent=target.c+" g";
+
+  const vegItems=collectVegItems();
+  const best=optimize(pf,cf,ff,vegItems,target);
+  const items=[
+    nutrient(pf,best.pg),
+    nutrient(cf,best.cg),
+    nutrient(ff,best.fg),
+    ...vegItems
+  ].filter(x=>x.g>.01);
+
+  const titleParts=[pf.name,cf.name];
+  if(best.fg>.01) titleParts.push(ff.name);
+  $("mealTitle").textContent=titleParts.join(" + ");
+  $("ingredientList").innerHTML=items.map(x=>`
+    <div class="ingredient-row"><span>${x.name}</span><strong>${x.g < 10 ? x.g.toFixed(1) : Math.round(x.g)} g</strong></div>
+  `).join("");
+  $("portionQuality").textContent=portionQuality(best,pf,cf,ff);
+
+  $("kcalOut").textContent=Math.round(best.t.kcal);
+  $("proteinOut").textContent=best.t.p.toFixed(1)+" g";
+  $("fatOut").textContent=best.t.f.toFixed(1)+" g";
+  $("carbOut").textContent=best.t.c.toFixed(1)+" g";
+  $("kcalDelta").textContent=fmtDelta(best.t.kcal,target.kcal," kcal");
+  $("proteinDelta").textContent=fmtDelta(best.t.p,target.p," g");
+  $("fatDelta").textContent=fmtDelta(best.t.f,target.f," g");
+  $("carbDelta").textContent=fmtDelta(best.t.c,target.c," g");
+
+  $("breakdown").innerHTML=items.map(x=>`
+    <tr>
+      <td>${x.name}</td>
+      <td>${x.g < 10 ? x.g.toFixed(1) : Math.round(x.g)}</td>
+      <td>${x.p.toFixed(1)}</td>
+      <td>${x.f.toFixed(1)}</td>
+      <td>${x.c.toFixed(1)}</td>
+      <td>${Math.round(x.kcal)}</td>
+    </tr>
+  `).join("");
+
+  const status=$("status");
+  if(within(best.t,target)){
+    status.className="status good";
+    status.textContent="✓ Måltiden ligger inom de praktiska toleranserna för alla fyra mål.";
+  }else{
+    const misses=[];
+    if(Math.abs(best.t.kcal-target.kcal)>TOL.kcal) misses.push("kalorier");
+    if(Math.abs(best.t.p-target.p)>TOL.p) misses.push("protein");
+    if(Math.abs(best.t.f-target.f)>TOL.f) misses.push("fett");
+    if(Math.abs(best.t.c-target.c)>TOL.c) misses.push("kolhydrater");
+    status.className=misses.length===1?"status warn":"status bad";
+    status.textContent=`Bästa praktiska lösning med valda råvaror. Utanför toleransen: ${misses.join(", ")}.`;
+  }
+
+  $("solverInfo").textContent=`Optimeraren testade ${best.tested.toLocaleString("sv-SE")} kombinationer. Protein och kalorier vägs tyngre än fett och kolhydrater, och orimliga portionsstorlekar får en extra straffpoäng.`;
+}
+
+[
+  "protein","carb","fat",
+  "veg1","veg1g","veg2","veg2g","veg3","veg3g",
+  "targetKcal","targetProtein","targetFat","targetCarb"
+].forEach(id=>$(id).addEventListener("input",calculate));
+
+$("resetBtn").onclick=()=>{
+  $("protein").value=0;
+  $("carb").value=0;
+  $("fat").value=0;
+  $("veg1").value=foods.veg.findIndex(x=>x.name==="Gurka");
+  $("veg1g").value=150;
+  $("veg2").value=foods.veg.findIndex(x=>x.name.startsWith("Edamame"));
+  $("veg2g").value=100;
+  $("veg3").value=0;
+  $("veg3g").value=0;
+  $("targetKcal").value=500;
+  $("targetProtein").value=42;
+  $("targetFat").value=18;
+  $("targetCarb").value=42;
+  calculate();
+};
+
+$("copyBtn").onclick=async()=>{
+  const rows=[...document.querySelectorAll(".ingredient-row")].map(x=>x.innerText.replace("\n"," – ")).join("\n");
+  const txt=`${$("mealTitle").textContent}\n${rows}\n\n${$("kcalOut").textContent} kcal | ${$("proteinOut").textContent} protein | ${$("fatOut").textContent} fett | ${$("carbOut").textContent} kolhydrater`;
+  await navigator.clipboard.writeText(txt);
+  $("copyBtn").textContent="Kopierat ✓";
+  setTimeout(()=>$("copyBtn").textContent="Kopiera måltid",1200);
+};
+
+calculate();
+</script>
+</body>
+</html>
